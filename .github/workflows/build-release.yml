@@ -1,4 +1,4 @@
-name: Build and Release
+name: Auto Build and Release
 
 on:
   push:
@@ -20,25 +20,29 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '6.0.x' # 或者 4.8/7.0，根据项目需要调整
+          dotnet-version: '6.0.x' # 根据项目需要调整版本
 
-      - name: Restore packages (JoystickSender)
-        run: dotnet restore JoystickSender/JoystickSender.csproj
-
-      - name: Restore packages (VJoyReceiver)
-        run: dotnet restore VJoyReceiver/VJoyReceiver.csproj
-
-      - name: Build JoystickSender
-        run: msbuild JoystickSender/JoystickSender.csproj /p:Configuration=Release
-
-      - name: Build VJoyReceiver
-        run: msbuild VJoyReceiver/VJoyReceiver.csproj /p:Configuration=Release
+      - name: Restore and Build all .csproj
+        run: |
+          echo "Restoring and building all .csproj files..."
+          for %%f in (*.csproj) do (
+            echo "Restoring %%f"
+            dotnet restore "%%f"
+            echo "Building %%f"
+            msbuild "%%f" /p:Configuration=Release
+          )
+          for /r %%f in (*.csproj) do (
+            echo "Restoring %%f"
+            dotnet restore "%%f"
+            echo "Building %%f"
+            msbuild "%%f" /p:Configuration=Release
+          )
+        shell: cmd
 
       - name: Archive build artifacts
         run: |
           mkdir output
-          copy JoystickSender\\bin\\Release\\*.exe output\\
-          copy VJoyReceiver\\bin\\Release\\*.exe output\\
+          for /r %%f in (*.exe) do copy "%%f" output\
         shell: cmd
 
       - name: Upload artifacts
