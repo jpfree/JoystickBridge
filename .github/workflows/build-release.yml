@@ -3,8 +3,8 @@ name: Build and Release
 on:
   push:
     tags:
-      - 'v*'
-  workflow_dispatch:
+      - 'v*'   # 例如 v1.0.0 时触发
+  workflow_dispatch: # 支持手动触发
 
 jobs:
   build:
@@ -20,12 +20,15 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '6.0.x'
+          dotnet-version: '6.0.x' # 根据项目需要调整版本
 
       - name: Restore and Build all .csproj
         run: |
+          echo "开始编译所有 .csproj 文件..."
           for /r %%f in (*.csproj) do (
+            echo "还原 %%f"
             dotnet restore "%%f"
+            echo "编译 %%f"
             msbuild "%%f" /p:Configuration=Release
           )
         shell: cmd
@@ -53,13 +56,14 @@ jobs:
           name: JoystickBridge-build
           path: output/
 
-      - name: Install GitHub CLI
-        uses: actions/setup-node@v4
+      - name: Create GitHub Release and Upload Assets
+        uses: softprops/action-gh-release@v2
         with:
-          node-version: '18'
-      - run: npm install -g gh
-
-      - name: Create Release
-        run: gh release create ${{ github.ref_name }} output/*.exe --title "Release ${{ github.ref_name }}" --notes "自动构建并发布的版本"
+          files: output/*.exe
+          tag_name: ${{ github.ref_name }}
+          name: "Release ${{ github.ref_name }}"
+          body: |
+            ✅ 自动构建并发布的版本
+            包含 JoystickSender 和 VJoyReceiver 可执行文件。
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
