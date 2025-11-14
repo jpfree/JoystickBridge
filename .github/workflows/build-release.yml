@@ -3,8 +3,8 @@ name: Build and Release
 on:
   push:
     tags:
-      - 'v*'   # 例如 v1.0.0 时触发
-  workflow_dispatch: # 手动触发
+      - 'v*'
+  workflow_dispatch:
 
 jobs:
   build:
@@ -20,20 +20,17 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '6.0.x' # 根据项目需要调整版本
+          dotnet-version: '6.0.x'
 
       - name: Restore and Build all .csproj
         run: |
-          echo "Restoring and building all .csproj files..."
           for /r %%f in (*.csproj) do (
-            echo "Restoring %%f"
             dotnet restore "%%f"
-            echo "Building %%f"
             msbuild "%%f" /p:Configuration=Release
           )
         shell: cmd
 
-      - name: Archive build artifacts
+      - name: Collect build artifacts
         run: |
           mkdir output
           for /r %%f in (*.exe) do copy "%%f" output\
@@ -56,36 +53,13 @@ jobs:
           name: JoystickBridge-build
           path: output/
 
+      - name: Install GitHub CLI
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - run: npm install -g gh
+
       - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
+        run: gh release create ${{ github.ref_name }} output/*.exe --title "Release ${{ github.ref_name }}" --notes "自动构建并发布的版本"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref_name }}
-          release_name: "Release ${{ github.ref_name }}"
-          body: |
-            自动构建并发布的版本。
-            包含 JoystickSender 和 VJoyReceiver 可执行文件。
-          draft: false
-          prerelease: false
-
-      - name: Upload Release Assets
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: output/JoystickSender.exe
-          asset_name: JoystickSender.exe
-          asset_content_type: application/octet-stream
-
-      - name: Upload Release Assets (VJoyReceiver)
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: output/VJoyReceiver.exe
-          asset_name: VJoyReceiver.exe
-          asset_content_type: application/octet-stream
