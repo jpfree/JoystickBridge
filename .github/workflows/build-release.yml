@@ -1,4 +1,4 @@
-name: Auto Build and Release
+name: Build and Release
 
 on:
   push:
@@ -25,12 +25,6 @@ jobs:
       - name: Restore and Build all .csproj
         run: |
           echo "Restoring and building all .csproj files..."
-          for %%f in (*.csproj) do (
-            echo "Restoring %%f"
-            dotnet restore "%%f"
-            echo "Building %%f"
-            msbuild "%%f" /p:Configuration=Release
-          )
           for /r %%f in (*.csproj) do (
             echo "Restoring %%f"
             dotnet restore "%%f"
@@ -62,9 +56,36 @@ jobs:
           name: JoystickBridge-build
           path: output/
 
-      - name: Create GitHub Release
+      - name: Create Release
+        id: create_release
         uses: actions/create-release@v1
-        with:
-          files: output/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref_name }}
+          release_name: "Release ${{ github.ref_name }}"
+          body: |
+            自动构建并发布的版本。
+            包含 JoystickSender 和 VJoyReceiver 可执行文件。
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Assets
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: output/JoystickSender.exe
+          asset_name: JoystickSender.exe
+          asset_content_type: application/octet-stream
+
+      - name: Upload Release Assets (VJoyReceiver)
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: output/VJoyReceiver.exe
+          asset_name: VJoyReceiver.exe
+          asset_content_type: application/octet-stream
