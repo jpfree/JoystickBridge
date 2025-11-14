@@ -20,17 +20,23 @@ jobs:
       - name: Setup NuGet
         uses: NuGet/setup-nuget@v2
 
-      - name: Restore NuGet packages
-        run: nuget restore JoystickBridge.sln
+      - name: Restore NuGet packages (JoystickSender)
+        run: nuget restore JoystickSender/JoystickSender.csproj
 
-      - name: Build solution
-        run: msbuild JoystickBridge.sln /p:Configuration=Release
+      - name: Restore NuGet packages (VJoyReceiver)
+        run: nuget restore VJoyReceiver/VJoyReceiver.csproj
+
+      - name: Build JoystickSender
+        run: msbuild JoystickSender/JoystickSender.csproj /p:Configuration=Release
+
+      - name: Build VJoyReceiver
+        run: msbuild VJoyReceiver/VJoyReceiver.csproj /p:Configuration=Release
 
       - name: Archive build artifacts
         run: |
           mkdir output
-          copy JoystickSender/bin/Release/*.exe output/
-          copy VJoyReceiver/bin/Release/*.exe output/
+          copy JoystickSender\\bin\\Release\\*.exe output\\
+          copy VJoyReceiver\\bin\\Release\\*.exe output\\
         shell: cmd
 
       - name: Upload artifacts
