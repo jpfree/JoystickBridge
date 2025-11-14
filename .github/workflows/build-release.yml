@@ -17,14 +17,16 @@ jobs:
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
 
-      - name: Setup NuGet
-        uses: NuGet/setup-nuget@v2
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '6.0.x' # 或者 4.8/7.0，根据项目需要调整
 
-      - name: Restore NuGet packages (JoystickSender)
-        run: nuget restore JoystickSender/JoystickSender.csproj
+      - name: Restore packages (JoystickSender)
+        run: dotnet restore JoystickSender/JoystickSender.csproj
 
-      - name: Restore NuGet packages (VJoyReceiver)
-        run: nuget restore VJoyReceiver/VJoyReceiver.csproj
+      - name: Restore packages (VJoyReceiver)
+        run: dotnet restore VJoyReceiver/VJoyReceiver.csproj
 
       - name: Build JoystickSender
         run: msbuild JoystickSender/JoystickSender.csproj /p:Configuration=Release
